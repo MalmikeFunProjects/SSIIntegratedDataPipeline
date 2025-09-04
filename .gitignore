@@ -1,0 +1,12 @@
+*/.env
+.env
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.out
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
