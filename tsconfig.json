@@ -1,0 +1,18 @@
+{
+  "typeRoots": ["./node_modules/@types", "./src/types"],
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "preserveConstEnums": true,
+    "strict": true,
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "downlevelIteration": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src", "src/types"]
+}
