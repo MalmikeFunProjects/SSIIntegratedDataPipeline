@@ -1,0 +1,162 @@
+services:
+  db:
+    image: postgres:16
+    container_name: postgres
+    hostname: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-veramo}
+      POSTGRES_USER: ${POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - veramo_network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-root} -d ${POSTGRES_DB:-veramo}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    hostname: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "8088:80"
+    networks:
+      - veramo_network
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  veramo_server:
+    build:
+      context: ./veramo-agent
+      dockerfile: Dockerfile
+    container_name: veramo_server
+    hostname: veramo_server
+    ports:
+      - "3332:3332"
+    environment:
+      DEBUG: veramo*
+      PORT: 3332
+      DID_PROVIDER: ${DID_PROVIDER:-did:key}
+      SSI_VALIDATION: ${SSI_VALIDATION:-true}
+      CACHE_DID: ${CACHE_DID:-false}
+      PROCESSING_MODE: ${PROCESSING_MODE:-sync}
+    networks:
+      - veramo_network
+    command: ["yarn", "start"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3332/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      restart_policy:
+        condition: on-failure # Restarts only on failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+    volumes:
+      - ./veramo-agent:/app
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+      host_did_web:
+        condition: service_healthy
+
+  credential_verifier:
+    build:
+      context: ./veramo-verifier
+      dockerfile: Dockerfile
+    container_name: credential_verifier
+    hostname: credential_verifier
+    ports:
+      - "4321:4321"
+    environment:
+      DEBUG: veramo-verifier*
+      PORT: 4321
+      DID_PROVIDER: ${DID_PROVIDER:-did:key}
+      SSI_VALIDATION: ${SSI_VALIDATION:-true}
+      CACHE_DID: ${CACHE_DID:-false}
+      PROCESSING_MODE: ${PROCESSING_MODE:-sync}
+    networks:
+      - veramo_network
+    command: ["yarn", "start"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4321/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      restart_policy:
+        condition: on-failure # Restarts only on failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+    volumes:
+      - ./veramo-verifier:/app
+      - /app/node_modules
+
+  host_did_web:
+    build:
+      context: ./host_did_web
+      dockerfile: Dockerfile
+    container_name: host_did_web
+    hostname: host_did_web
+    ports:
+      - "3999:3999"
+    networks:
+      - veramo_network
+    volumes:
+      - type: bind
+        source: ./host_did_web/src
+        target: /app/src
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ${HOME}/.ssh/docker_github
+        target: /root/.ssh/id_rsa
+        read_only: true
+      - type: bind
+        source: ${HOME}/.ssh/docker_github.pub
+        target: /root/.ssh/id_rsa.pub
+        read_only: true
+    environment:
+      DID_PROVIDER: ${DID_PROVIDER:-did:key}
+      SSI_VALIDATION: ${SSI_VALIDATION:-true}
+      CACHE_DID: ${CACHE_DID:-false}
+      PROCESSING_MODE: ${PROCESSING_MODE:-sync}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3999/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  db_data:
+  pgadmin_data:
+
+networks:
+  veramo_network:
+    driver: bridge
