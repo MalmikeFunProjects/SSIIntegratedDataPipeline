@@ -1,0 +1,33 @@
+{
+    "name": "veramo-verify-server",
+    "version": "0.1.0",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "dev": "node --watch src/server.js",
+        "starts": "node src/server.js",
+        "start": "NODE_ENV=production tsx src/server.ts"
+    },
+    "devDependencies": {
+        "@types/node": "^24.3.0",
+        "tsx": "^4.20.3",
+        "typescript": "^5.8.3"
+    },
+    "dependencies": {
+        "@types/express": "^5.0.3",
+        "@veramo/core": "^6.0.0",
+        "@veramo/credential-w3c": "^6.0.0",
+        "@veramo/did-provider-ethr": "^6.0.0",
+        "@veramo/did-provider-key": "^6.0.0",
+        "@veramo/did-provider-web": "^6.0.0",
+        "@veramo/did-resolver": "^6.0.0",
+        "ethr-did-resolver": "^11.0.4",
+        "express": "^5.0.0",
+        "lru-cache": "^11.1.0",
+        "pino": "^9.4.0",
+        "pino-http": "^10.3.0",
+        "web-did-resolver": "^2.0.30",
+        "dotenv": "^17.2.0",
+        "prom-client": "^15.1.3"
+    }
+}
