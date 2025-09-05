@@ -153,6 +153,37 @@ services:
       retries: 5
       start_period: 30s
 
+  data_synthesizer:
+    build:
+      context: ./data_synthesizer
+      dockerfile: Dockerfile
+    container_name: data_synthesizer
+    hostname: data_synthesizer
+    ports:
+      - "4200:4200"
+      - "2122:2122"
+    networks:
+      - veramo_network
+    depends_on:
+      veramo_server:
+        condition: service_healthy
+      # prometheus:
+      #   condition: service_healthy
+    volumes:
+      - ./data_synthesizer:/app
+    environment:
+      PORT: 4200
+      DID_PROVIDER: ${DID_PROVIDER:-did:key}
+      SSI_VALIDATION: ${SSI_VALIDATION:-true}
+      CACHE_DID: ${CACHE_DID:-false}
+      PROCESSING_MODE: ${PROCESSING_MODE:-sync}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4200/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 volumes:
   db_data:
   pgadmin_data:
