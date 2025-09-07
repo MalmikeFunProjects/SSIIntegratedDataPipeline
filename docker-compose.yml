@@ -315,6 +315,36 @@ services:
     volumes:
       - ./kafka_producer/app:/app/app
 
+  kafka_consumer:
+    container_name: kafka_consumer
+    hostname: kafka_consumer
+    build:
+      context: ./kafka_consumer
+      dockerfile: Dockerfile
+    ports:
+      - "3338:3338"
+      - "9001:9001"
+    networks:
+      - veramo_network
+    environment:
+      DID_PROVIDER: ${DID_PROVIDER:-did:key}
+      SSI_VALIDATION: ${SSI_VALIDATION:-true}
+      CACHE_DID: ${CACHE_DID:-false}
+      PROCESSING_MODE: ${PROCESSING_MODE:-sync}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3338/health || exit 1"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      kafka_initialiser:
+        condition: service_healthy
+      credential_verifier:
+        condition: service_healthy
+    volumes:
+      - ./kafka_consumer/app:/app/app
+
   kafka_initialiser:
     build:
       context: ./kafka_initialiser
