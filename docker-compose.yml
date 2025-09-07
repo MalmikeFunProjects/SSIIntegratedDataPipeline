@@ -1,4 +1,108 @@
 services:
+  # Kafka Broker: Central component of Apache Kafka, handles message brokering
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    hostname: kafka # Hostname for the Kafka broker container
+    container_name: kafka # Container name for the Kafka broker
+    restart: always # Ensures Kafka broker restarts if it fails
+    ports:
+      - "9092:9092" # Exposes Kafka's default port
+    networks:
+      - veramo_network # Connects to the veramo_network
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:29093"
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0 # Time before consumer group rebalancing begins
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z kafka 29092"] # Health check for Kafka broker availability
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  # Schema Registry: Provides a RESTful interface for managing Avro schemas
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.0 # Use specific version instead of latest
+    hostname: schema-registry # Hostname for Schema Registry
+    container_name: schema-registry # Container name for Schema Registry
+    restart: always # Ensures Schema Registry restarts if it fails
+    depends_on:
+      kafka:
+        condition: service_healthy # Wait for Kafka to be healthy
+    ports:
+      - "8081:8081" # Exposes the Schema Registry API port
+    networks:
+      - veramo_network # Connects to the veramo_network
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka:29092" # Connects Schema Registry to Kafka broker
+      SCHEMA_REGISTRY_HOST_NAME: "localhost" # Hostname for Schema Registry
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081" # HTTP listener address for Schema Registry
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"] # Health check for Schema Registry
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Control Center: A UI and monitoring tool for managing and monitoring Kafka
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:7.4.0 # Use specific version instead of latest
+    hostname: control-center # Hostname for Control Center
+    container_name: control-center # Container name for Control Center
+    restart: always # Ensures Control Center restarts if it fails
+    depends_on:
+      kafka:
+        condition: service_healthy # Wait for Kafka to be healthy
+      schema-registry:
+        condition: service_healthy # Wait for Schema Registry to be healthy
+    ports:
+      - "9021:9021" # Exposes the Control Center port
+    networks:
+      - veramo_network # Connects to the veramo_network
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: "kafka:29092" # Connects Control Center to Kafka broker
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081" # URL for Schema Registry
+      CONTROL_CENTER_REPLICATION_FACTOR: 1 # Replication factor for internal topics
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1 # Number of partitions for internal topics
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1 # Number of partitions for monitoring topics
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1 # Replication factor for metrics topics
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092 # Add this for metrics
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1 # Add this for metrics
+      CONFLUENT_METRICS_ENABLE: "true" # Enable metrics collection
+      PORT: 9021 # Port for Control Center
+
+  # Kafka REST Proxy: Exposes a RESTful interface to interact with Kafka
+  kafka-rest:
+    image: confluentinc/cp-kafka-rest:7.4.0 # Use specific version instead of latest
+    hostname: kafka-rest # Hostname for Kafka REST Proxy
+    container_name: kafka-rest
+    restart: always # Ensures Kafka REST Proxy restarts if it fails
+    ports:
+      - "8082:8082" # Exposes the REST API port
+    networks:
+      - veramo_network # Connects to the veramo_network
+    depends_on:
+      schema-registry:
+        condition: service_healthy # Wait for Schema Registry to be healthy
+      kafka:
+        condition: service_healthy # Wait for Kafka to be healthy
+    environment:
+      KAFKA_REST_BOOTSTRAP_SERVERS: "kafka:29092" # Connects REST Proxy to Kafka broker
+      KAFKA_REST_SCHEMA_REGISTRY_URL: "http://schema-registry:8081" # URL for Schema Registry
+      KAFKA_REST_HOST_NAME: localhost # Hostname for REST Proxy
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082" # REST Proxy listener address
+
   db:
     image: postgres:16
     container_name: postgres
@@ -211,9 +315,43 @@ services:
     volumes:
       - ./kafka_producer/app:/app/app
 
+  kafka_initialiser:
+    build:
+      context: ./kafka_initialiser
+      dockerfile: Dockerfile
+    container_name: kafka_initialiser
+    hostname: kafka_initialiser
+    ports:
+      - "5003:5003"
+    networks:
+      - veramo_network
+    healthcheck:
+      test: ["CMD-SHELL", "grep -q SUCCESS /tmp/healthcheck.log || exit 1"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+    volumes:
+      - ./kafka_initialiser/:/app
+    environment:
+      KSQL_BOOTSTRAP_SERVERS: "kafka:29092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy # Waits for Schema Registry to be healthy
+
 volumes:
   db_data:
   pgadmin_data:
+  kafka_data:
+    driver: local
 
 networks:
   veramo_network:

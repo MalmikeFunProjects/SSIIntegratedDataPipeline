@@ -1,0 +1,41 @@
+{
+    "type": "record",
+    "name": "TradeEventRef",
+    "namespace": "io.malmike.trades",
+    "doc": "Represents a trade event, which may carry either raw trade data or a Verifiable Credential with signed trade data.",
+    "fields": [
+        {
+            "name": "trade_event_id",
+            "type": "string",
+            "doc": "UUID identifiying trade event. This has the same value as that for Trade_Id in io.malmike.trades.TradeDataRef"
+        },
+        {
+            "name": "start_timestamp",
+            "type": "string",
+            "doc": "ISO 8601 timestamp indicating when the event was generated/ingested."
+        },
+        {
+            "name": "symbol",
+            "type": "string",
+            "doc": "Market symbol for the trade (e.g., 'BINANCE:ETHUSDT')."
+        },
+        {
+            "name": "tradeData",
+            "type": [
+                "null",
+                "io.malmike.trades.TradeDataRef"
+            ],
+            "default": null,
+            "doc": "Raw trade data, present if no credential is attached."
+        },
+        {
+            "name": "tradeCredential",
+            "type": [
+                "null",
+                "io.malmike.trades.TradeCredentialRef"
+            ],
+            "default": null,
+            "doc": "Full Verifiable Credential containing trade data and proof. Present if event carries signed data."
+        }
+    ]
+}

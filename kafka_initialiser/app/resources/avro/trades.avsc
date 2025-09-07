@@ -1,0 +1,68 @@
+{
+    "type": "record",
+    "name": "SignedTradeEvent",
+    "namespace": "com.example",
+    "fields": [
+        {
+            "name": "jwt",
+            "type": "string"
+        },
+        {
+            "name": "start_timestamp",
+            "type": "string",
+            "doc": "The timestamp for receiving the trade data from finnhub."
+        },
+        {
+            "name": "symbol",
+            "type": "string"
+        },
+        {
+            "name": "did",
+            "type": "string"
+        },
+        {
+            "name": "data",
+            "type": {
+                "type": "record",
+                "name": "TradeData",
+                "fields": [
+                    {
+                        "name": "Trade_Condition",
+                        "type": [
+                            "null",
+                            {
+                                "type": "array",
+                                "items": [
+                                    "string",
+                                    "null"
+                                ],
+                                "default": [],
+                                "doc": "List of trade conditions that may describe special characteristics of the trade, such as 'market', 'limit', 'cross', etc. This field can be null if there are no specific trade conditions."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Price",
+                        "type": "double",
+                        "doc": "The price at which the trade or price update occurred. This value represents the last traded price of the asset."
+                    },
+                    {
+                        "name": "Symbol",
+                        "type": "string",
+                        "doc": "The symbol for the asset being traded, such as 'AAPL' for Apple stock or 'BTC-USD' for Bitcoin to USD."
+                    },
+                    {
+                        "name": "Event_Timestamp",
+                        "type": "long",
+                        "doc": "The timestamp in Unix epoch format (milliseconds since 1970-01-01) indicating the time at which the trade occurred or the price update was recorded."
+                    },
+                    {
+                        "name": "Volume",
+                        "type": "double",
+                        "doc": "The number of units of the asset traded. This represents the volume of the asset that changed hands in the trade."
+                    }
+                ]
+            }
+        }
+    ]
+}

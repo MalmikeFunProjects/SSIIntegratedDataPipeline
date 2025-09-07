@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "kafka_producer"
+version = "0.1.0"
+description = "Producer for kafka"
+authors = ["Male Michael <malmike21@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.12.0"
+python-dotenv = "1.0.1"
+confluent-kafka = {extras = ["avro", "schema-registry"], version = "^2.11.0"}
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
