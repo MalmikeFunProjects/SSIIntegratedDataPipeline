@@ -1,0 +1,46 @@
+{
+    "type": "record",
+    "name": "TradeDataRef",
+    "namespace": "io.malmike.trades",
+    "doc": "Encapsulates the raw details of a trade event.",
+    "fields": [
+        {
+            "name": "Trade_Id",
+            "type": "string",
+            "doc": "UUID identifiying trade data"
+        },
+        {
+            "name": "Trade_Condition",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "string"
+                }
+            ],
+            "default": null,
+            "doc": "List of trade conditions that may describe characteristics of the trade (e.g., 'market', 'limit', 'cross')."
+        },
+        {
+            "name": "Price",
+            "type": "double",
+            "doc": "The price at which the trade occurred."
+        },
+        {
+            "name": "Symbol",
+            "type": "string",
+            "doc": "The symbol for the traded asset (e.g., 'BINANCE:ETHUSDT')."
+        },
+        {
+            "name": "Event_Timestamp",
+            "type": "long",
+            "logicalType": "timestamp-millis",
+            "doc": "The timestamp (milliseconds since epoch) when the trade occurred."
+        },
+        {
+            "name": "Volume",
+            "type": "double",
+            "doc": "The traded volume (number of units)."
+        }
+    ]
+}

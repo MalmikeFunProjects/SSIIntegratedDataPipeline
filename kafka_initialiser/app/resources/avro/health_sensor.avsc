@@ -1,0 +1,29 @@
+{
+  "type": "record",
+  "name": "HealthSensorRecord",
+  "namespace": "com.example.health",
+  "fields": [
+    {
+      "name": "data",
+      "type": {
+        "type": "record",
+        "name": "SensorData",
+        "fields": [
+          { "name": "id", "type": "string"},
+          { "name": "patient_id", "type": "string" },
+          { "name": "event_timestamp", "type": "string" },
+          { "name": "sensor_id", "type": "string" },
+          { "name": "sensor_type", "type": "string" },
+          { "name": "temperature", "type": "double" },
+          { "name": "systolic_bp", "type": "int" },
+          { "name": "diastolic_bp", "type": "int" },
+          { "name": "heart_rate", "type": "int" }
+        ]
+      }
+    },
+    { "name": "vc_store_signature", "type": "string" },
+    { "name": "start_timestamp", "type": "string", "doc": "The timestamp for receiving the health sensor data." },
+    { "name": "did", "type": "string" },
+    { "name": "jwt", "type": "string" }
+  ]
+}

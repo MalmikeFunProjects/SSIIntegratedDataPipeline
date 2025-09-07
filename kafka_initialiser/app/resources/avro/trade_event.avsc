@@ -1,0 +1,232 @@
+{
+    "type": "record",
+    "name": "TradeEvent",
+    "namespace": "io.malmike.trades",
+    "doc": "Represents a trade event, which may carry either raw trade data or a Verifiable Credential with signed trade data.",
+    "fields": [
+        {
+            "name": "start_timestamp",
+            "type": "string",
+            "doc": "ISO 8601 timestamp indicating when the event was generated/ingested."
+        },
+        {
+            "name": "symbol",
+            "type": "string",
+            "doc": "Market symbol for the trade (e.g., 'BINANCE:ETHUSDT')."
+        },
+        {
+            "name": "trade_event_id",
+            "type": "string",
+            "doc": "UUID identifiying trade event. This has the same value as that for Trade_Id"
+        },
+        {
+            "name": "tradeData",
+            "type": [
+                "null",
+                {
+                    "type": "record",
+                    "name": "RawTradeData",
+                    "doc": "Encapsulates the raw details of a trade event.",
+                    "fields": [
+                        {
+                            "name": "Trade_Id",
+                            "type": "string",
+                            "doc": "UUID identifiying trade data"
+                        },
+                        {
+                            "name": "Trade_Condition",
+                            "type": [
+                                "null",
+                                {
+                                    "type": "array",
+                                    "items": "string"
+                                }
+                            ],
+                            "default": null,
+                            "doc": "List of trade conditions that may describe characteristics of the trade (e.g., 'market', 'limit', 'cross')."
+                        },
+                        {
+                            "name": "Price",
+                            "type": "double",
+                            "doc": "The price at which the trade occurred."
+                        },
+                        {
+                            "name": "Symbol",
+                            "type": "string",
+                            "doc": "The symbol for the traded asset (e.g., 'BINANCE:ETHUSDT')."
+                        },
+                        {
+                            "name": "Event_Timestamp",
+                            "type": "long",
+                            "logicalType": "timestamp-millis",
+                            "doc": "The timestamp (milliseconds since epoch) when the trade occurred."
+                        },
+                        {
+                            "name": "Volume",
+                            "type": "double",
+                            "doc": "The traded volume (number of units)."
+                        }
+                    ]
+                }
+            ],
+            "default": null,
+            "doc": "Raw trade data, present if no credential is attached."
+        },
+        {
+            "name": "tradeCredential",
+            "type": [
+                "null",
+                {
+                    "type": "record",
+                    "name": "TradeCredential",
+                    "doc": "A full Verifiable Credential containing trade data and associated cryptographic proof.",
+                    "fields": [
+                        {
+                            "name": "context",
+                            "aliases": [
+                                "@context"
+                            ],
+                            "type": {
+                                "type": "array",
+                                "items": "string"
+                            },
+                            "doc": "JSON-LD contexts that define the semantics of the credential."
+                        },
+                        {
+                            "name": "id",
+                            "type": "string",
+                            "doc": "Unique identifier for this credential instance."
+                        },
+                        {
+                            "name": "issuanceDate",
+                            "type": "string",
+                            "doc": "ISO8601 datetime string when the credential was issued."
+                        },
+                        {
+                            "name": "issuer",
+                            "type": {
+                                "type": "record",
+                                "name": "Issuer",
+                                "doc": "Represents the issuer of a Verifiable Credential.",
+                                "fields": [
+                                    {
+                                        "name": "id",
+                                        "type": "string",
+                                        "doc": "DID of the credential issuer."
+                                    }
+                                ]
+                            },
+                            "doc": "Issuer of the credential."
+                        },
+                        {
+                            "name": "credentialSubject",
+                            "type": {
+                                "type": "record",
+                                "name": "CredentialSubject",
+                                "doc": "The subject of the Verifiable Credential, usually the data source. Contains trade claims.",
+                                "fields": [
+                                    {
+                                        "name": "id",
+                                        "type": "string",
+                                        "doc": "DID of the credential subject (e.g., the device or exchange)."
+                                    },
+                                    {
+                                        "name": "claims",
+                                        "type": {
+                                            "type": "record",
+                                            "name": "Claims",
+                                            "fields": [
+                                                {
+                                                    "name": "TradeData",
+                                                    "type": {
+                                                        "type": "record",
+                                                        "name": "TradeData",
+                                                        "doc": "Encapsulates the raw details of a trade event.",
+                                                        "fields": [
+                                                            {
+                                                                "name": "Trade_Id",
+                                                                "type": "string",
+                                                                "doc": "UUID identifiying trade data"
+                                                            },
+                                                            {
+                                                                "name": "Trade_Condition",
+                                                                "type": [
+                                                                    "null",
+                                                                    {
+                                                                        "type": "array",
+                                                                        "items": "string"
+                                                                    }
+                                                                ],
+                                                                "default": null,
+                                                                "doc": "List of trade conditions that may describe characteristics of the trade (e.g., 'market', 'limit', 'cross')."
+                                                            },
+                                                            {
+                                                                "name": "Price",
+                                                                "type": "double",
+                                                                "doc": "The price at which the trade occurred."
+                                                            },
+                                                            {
+                                                                "name": "Symbol",
+                                                                "type": "string",
+                                                                "doc": "The symbol for the traded asset (e.g., 'BINANCE:ETHUSDT')."
+                                                            },
+                                                            {
+                                                                "name": "Event_Timestamp",
+                                                                "type": "long",
+                                                                "logicalType": "timestamp-millis",
+                                                                "doc": "The timestamp (milliseconds since epoch) when the trade occurred."
+                                                            },
+                                                            {
+                                                                "name": "Volume",
+                                                                "type": "double",
+                                                                "doc": "The traded volume (number of units)."
+                                                            }
+                                                        ]
+                                                    },
+                                                    "doc": "The trade details asserted by the credential."
+                                                }
+                                            ]
+                                        },
+                                        "doc": "The claims made about the subject."
+                                    }
+                                ]
+                            },
+                            "doc": "Subject of the credential, including claims."
+                        },
+                        {
+                            "name": "proof",
+                            "type": {
+                                "type": "record",
+                                "name": "Proof",
+                                "doc": "Cryptographic proof attached to a Verifiable Credential.",
+                                "fields": [
+                                    {
+                                        "name": "jwt",
+                                        "type": "string",
+                                        "doc": "Compact JWT containing the cryptographic proof."
+                                    },
+                                    {
+                                        "name": "type",
+                                        "type": "string",
+                                        "doc": "The type of proof (e.g., 'JwtProof2020')."
+                                    }
+                                ]
+                            },
+                            "doc": "Cryptographic proof attached to the credential."
+                        },
+                        {
+                            "name": "type",
+                            "type": {
+                                "type": "array",
+                                "items": "string"
+                            },
+                            "doc": "Array of credential types, e.g. ['VerifiableCredential']."
+                        }
+                    ]
+                }
+            ],
+            "default": null,
+            "doc": "Full Verifiable Credential containing trade data and proof. Present if event carries signed data."
+        }
+    ]
+}
