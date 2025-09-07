@@ -315,6 +315,38 @@ services:
     volumes:
       - ./kafka_producer/app:/app/app
 
+  kafka_initialiser:
+    build:
+      context: ./kafka_initialiser
+      dockerfile: Dockerfile
+    container_name: kafka_initialiser
+    hostname: kafka_initialiser
+    ports:
+      - "5003:5003"
+    networks:
+      - veramo_network
+    healthcheck:
+      test: ["CMD-SHELL", "grep -q SUCCESS /tmp/healthcheck.log || exit 1"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+    volumes:
+      - ./kafka_initialiser/:/app
+    environment:
+      KSQL_BOOTSTRAP_SERVERS: "kafka:29092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy # Waits for Schema Registry to be healthy
+
 volumes:
   db_data:
   pgadmin_data:
