@@ -184,6 +184,33 @@ services:
       retries: 5
       start_period: 30s
 
+  kafka_producer:
+    container_name: kafka_producer
+    hostname: kafka_producer
+    build:
+      context: ./kafka_producer
+      dockerfile: Dockerfile
+    ports:
+      - "3337:3337"
+      - "9000:9000"
+    networks:
+      - veramo_network
+    environment:
+      DID_PROVIDER: ${DID_PROVIDER:-did:key}
+      SSI_VALIDATION: ${SSI_VALIDATION:-true}
+      CACHE_DID: ${CACHE_DID:-false}
+      PROCESSING_MODE: ${PROCESSING_MODE:-sync}
+      PRODUCER_TIMEOUT: ${PRODUCER_TIMEOUT}
+    depends_on:
+      kafka_initialiser:
+        condition: service_healthy
+      data_synthesizer:
+        condition: service_healthy
+      kafka_consumer:
+        condition: service_healthy
+    volumes:
+      - ./kafka_producer/app:/app/app
+
 volumes:
   db_data:
   pgadmin_data:
