@@ -32,6 +32,24 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
 
+  # Dedicated Prometheus exporter for Kafka consumer group lag and broker/topic metrics.
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    container_name: kafka-exporter
+    hostname: kafka-exporter
+    ports:
+      - "9308:9308" # Prometheus scrape endpoint
+    networks:
+      - veramo_network
+    command:
+      - "--kafka.server=kafka:29092"
+      - "--kafka.version=7.4.0"
+      - "--web.listen-address=:9308"
+      - "--web.telemetry-path=/metrics"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
   # Schema Registry: Provides a RESTful interface for managing Avro schemas
   schema-registry:
     image: confluentinc/cp-schema-registry:7.4.0 # Use specific version instead of latest
@@ -102,6 +120,104 @@ services:
       KAFKA_REST_SCHEMA_REGISTRY_URL: "http://schema-registry:8081" # URL for Schema Registry
       KAFKA_REST_HOST_NAME: localhost # Hostname for REST Proxy
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082" # REST Proxy listener address
+
+  node-exporter:
+    image: prom/node-exporter
+    container_name: node-exporter
+    hostname: node-exporter
+    ports:
+      - "9100:9100"
+    restart: always
+    networks:
+      - veramo_network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    hostname: cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: always
+    networks:
+      - veramo_network
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    hostname: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    networks:
+      - veramo_network
+
+  prometheus-config:
+    image: alpine:latest
+    hostname: prometheus-config
+    container_name: prometheus-config
+    volumes:
+      - ./prometheus/prometheus.yml.template:/tmp/prometheus.yml.template
+      - prometheus-config:/prometheus-config
+    environment:
+      DID_PROVIDER: ${DID_PROVIDER:-did:key}
+      SSI_VALIDATION: ${SSI_VALIDATION:-true}
+      CACHE_DID: ${CACHE_DID:-false}
+      PROCESSING_MODE: ${PROCESSING_MODE:-sync}
+    command: |
+      sh -euo pipefail -c '
+        apk add --no-cache gettext
+        envsubst < /tmp/prometheus.yml.template > /prometheus-config/prometheus.yml
+        # fail if any placeholders remain
+        if grep -q '$\\{' /prometheus-config/prometheus.yml; then
+          echo "Unsubstituted variables remain";
+          exit 1
+        fi
+        echo "All items substituted"
+      '
+    restart: "no"
+
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    hostname: prometheus
+    depends_on:
+      prometheus-config:
+        condition: service_completed_successfully
+    volumes:
+      - prometheus-config:/etc/prometheus
+      - prometheus-data:/prometheus
+    command:
+      # - '--config.file=/etc/prometheus/prometheus.yml'
+      # - '--storage.tsdb.path=/prometheus'
+    #   - '--web.console.libraries=/etc/prometheus/console_libraries'
+    #   - '--web.console.templates=/etc/prometheus/consoles'
+      # - '--web.enable-lifecycle'
+      # - '--web.listen-address=0.0.0.0:9090'
+    #   - '--storage.tsdb.retention.time=15d'
+
+    ports:
+      - "9090:9090"
+    restart: always
+    networks:
+      - veramo_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:9090/-/healthy || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   db:
     image: postgres:16
@@ -382,6 +498,9 @@ volumes:
   pgadmin_data:
   kafka_data:
     driver: local
+  prometheus-config:
+  prometheus-data:
+  grafana-data:
 
 networks:
   veramo_network:
