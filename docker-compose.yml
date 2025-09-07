@@ -103,6 +103,62 @@ services:
       KAFKA_REST_HOST_NAME: localhost # Hostname for REST Proxy
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082" # REST Proxy listener address
 
+  prometheus-config:
+    image: alpine:latest
+    hostname: prometheus-config
+    container_name: prometheus-config
+    volumes:
+      - ./prometheus/prometheus.yml.template:/tmp/prometheus.yml.template
+      - prometheus-config:/prometheus-config
+    environment:
+      DID_PROVIDER: ${DID_PROVIDER:-did:key}
+      SSI_VALIDATION: ${SSI_VALIDATION:-true}
+      CACHE_DID: ${CACHE_DID:-false}
+      PROCESSING_MODE: ${PROCESSING_MODE:-sync}
+    command: |
+      sh -euo pipefail -c '
+        apk add --no-cache gettext
+        envsubst < /tmp/prometheus.yml.template > /prometheus-config/prometheus.yml
+        # fail if any placeholders remain
+        if grep -q '$\\{' /prometheus-config/prometheus.yml; then
+          echo "Unsubstituted variables remain";
+          exit 1
+        fi
+        echo "All items substituted"
+      '
+    restart: "no"
+
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    hostname: prometheus
+    depends_on:
+      prometheus-config:
+        condition: service_completed_successfully
+    volumes:
+      - prometheus-config:/etc/prometheus
+      - prometheus-data:/prometheus
+    command:
+      # - '--config.file=/etc/prometheus/prometheus.yml'
+      # - '--storage.tsdb.path=/prometheus'
+    #   - '--web.console.libraries=/etc/prometheus/console_libraries'
+    #   - '--web.console.templates=/etc/prometheus/consoles'
+      # - '--web.enable-lifecycle'
+      # - '--web.listen-address=0.0.0.0:9090'
+    #   - '--storage.tsdb.retention.time=15d'
+
+    ports:
+      - "9090:9090"
+    restart: always
+    networks:
+      - veramo_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:9090/-/healthy || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   db:
     image: postgres:16
     container_name: postgres
@@ -129,24 +185,24 @@ services:
       retries: 5
       start_period: 30s
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
-    hostname: pgadmin
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: adminpassword
-      PGADMIN_LISTEN_PORT: 80
-    ports:
-      - "8088:80"
-    networks:
-      - veramo_network
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: pgadmin
+  #   hostname: pgadmin
+  #   restart: always
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@example.com
+  #     PGADMIN_DEFAULT_PASSWORD: adminpassword
+  #     PGADMIN_LISTEN_PORT: 80
+  #   ports:
+  #     - "8088:80"
+  #   networks:
+  #     - veramo_network
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
 
   veramo_server:
     build:
@@ -288,6 +344,89 @@ services:
       retries: 5
       start_period: 30s
 
+  # synthesizer_base: &synthesizer_base
+  #   build:
+  #     context: ./iot-synthesizer
+  #     dockerfile: Dockerfile
+  #   container_name: synthesizer_base
+  #   hostname: synthesizer_base
+  #   ports:
+  #     - "3339:3339"
+  #     - "2112:2112"
+  #   networks:
+  #     - veramo_network
+  #   depends_on:
+  #     veramo_server:
+  #       condition: service_healthy
+  #     # prometheus:
+  #     #   condition: service_healthy
+  #   volumes:
+  #     - ./iot-synthesizer:/app
+  #   environment: &base_env
+  #     PORT: 3339
+  #     PATIENT_ID: P-2000
+  #     VERAMO_API_TOKEN: ${VERAMO_API_TOKEN:-test123}
+  #     VERAMO_API_URL: ${VERAMO_API_URL:-http://veramo_server:3332}
+  #     DID_PROVIDER: did:key
+  #     DID_WEB_LINK: did:web:MalmikeFunProjects.github.io:GenerateDidWeb:device-1
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -f http://localhost:3339/health || exit 1"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 30s
+
+  # synthesizer1:
+  #   <<: *synthesizer_base
+  #   container_name: synthesizer1
+  #   hostname: synthesizer1
+  #   ports:
+  #     - "3340:3339"
+  #     - "2113:2112"
+  #   environment:
+  #     <<: *base_env
+  #     PORT: 3340
+  #     PATIENT_ID: P-2001
+  #     DID_PROVIDER: did:key
+  #     DID_WEB_LINK: did:web:MalmikeFunProjects.github.io:GenerateDidWeb:device-2
+
+  # synthesizer2:
+  #   <<: *synthesizer_base
+  #   container_name: synthesizer2
+  #   hostname: synthesizer2
+  #   ports:
+  #     - "3341:3339"
+  #   environment:
+  #     <<: *base_env
+  #     PORT: 3341
+  #     PATIENT_ID: P-2002
+  #     DID_PROVIDER: did:key
+  #     DID_WEB_LINK: did:web:MalmikeFunProjects.github.io:GenerateDidWeb:device-3
+
+  # producer_go:
+  #   container_name: producer_go
+  #   hostname: producer_go
+  #   build:
+  #     context: ./producer_go
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3335:3335"
+  #   networks:
+  #     - veramo_network
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+  #   #   synthesizer_base:
+  #   #     condition: service_healthy
+  #     # synthesizer1:
+  #     #   condition: service_healthy
+  #   environment:
+  #     AVRO_SCHEMA: resources/avro/health_sensor.avsc
+  #     SCHEMA_REGISTRY_URL: http://schema-registry:8081
+  #     BROKER_URLs: kafka:9092
+  # volumes:
+  #   - ./producer_go:/app
+
   kafka_producer:
     container_name: kafka_producer
     hostname: kafka_producer
@@ -312,6 +451,8 @@ services:
         condition: service_healthy
       kafka_consumer:
         condition: service_healthy
+      # synthesizer_base:
+      #   condition: service_healthy
     volumes:
       - ./kafka_producer/app:/app/app
 
@@ -382,6 +523,9 @@ volumes:
   pgadmin_data:
   kafka_data:
     driver: local
+  prometheus-config:
+  prometheus-data:
+  grafana-data:
 
 networks:
   veramo_network:
