@@ -31,7 +31,7 @@
       },
       "id": 11,
       "panels": [],
-      "title": "Row title",
+      "title": "Thesis project",
       "type": "row"
     },
     {
@@ -109,7 +109,9 @@
             "max",
             "min",
             "p50",
-            "p95"
+            "p95",
+            "mean",
+            "stdDev"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -219,7 +221,9 @@
             "max",
             "min",
             "p50",
-            "p95"
+            "p95",
+            "mean",
+            "stdDev"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -297,6 +301,7 @@
               "mode": "off"
             }
           },
+          "displayName": "CPU usage",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -311,7 +316,7 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "percent"
         },
         "overrides": [
           {
@@ -333,7 +338,7 @@
                 "value": {
                   "legend": false,
                   "tooltip": false,
-                  "viz": true
+                  "viz": false
                 }
               }
             ]
@@ -373,12 +378,13 @@
             "uid": "PBFA97CFB590B2093"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "rate(container_cpu_usage_seconds_total[$__rate_interval])",
+          "editorMode": "code",
+          "expr": "rate(container_cpu_usage_seconds_total{id=\"/\"}[30s]) / scalar(machine_cpu_cores{instance=\"cadvisor:8080\"}) * 100",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
           "instant": false,
+          "interval": "5",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A",
@@ -431,6 +437,7 @@
               "mode": "off"
             }
           },
+          "displayName": "CPU Usage",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -445,34 +452,9 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "percent"
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "{cpu=\"total\", id=\"/\", instance=\"cadvisor:8080\", job=\"cadvisor\"}"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -480,7 +462,7 @@
         "x": 12,
         "y": 9
       },
-      "hideTimeOverride": false,
+      "hideTimeOverride": true,
       "id": 24,
       "options": {
         "legend": {
@@ -509,7 +491,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "rate(container_cpu_usage_seconds_total[$__rate_interval])",
+          "expr": "rate(container_cpu_usage_seconds_total{id=\"/\"}[30s]) / scalar(machine_cpu_cores{instance=\"cadvisor:8080\"}) * 100",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "interval": "5",
@@ -711,7 +693,7 @@
         "x": 12,
         "y": 17
       },
-      "hideTimeOverride": false,
+      "hideTimeOverride": true,
       "id": 14,
       "options": {
         "legend": {
@@ -719,7 +701,9 @@
             "max",
             "min",
             "p50",
-            "p95"
+            "p95",
+            "mean",
+            "stdDev"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -1429,20 +1413,7 @@
           },
           "unit": "s"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "B"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "DID:Web with cache verification latency"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1451,14 +1422,16 @@
         "y": 41
       },
       "hideTimeOverride": false,
-      "id": 13,
+      "id": 25,
       "options": {
         "legend": {
           "calcs": [
             "max",
             "min",
             "p50",
-            "p95"
+            "p95",
+            "mean",
+            "stdDev"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -1478,8 +1451,8 @@
             "uid": "PBFA97CFB590B2093"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket{did_provider=\"did:web\", cache_did=\"True\"}[30s])))",
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(credential_verifier_did_resolution_duration_seconds_bucket{}[30s])))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "interval": "5",
@@ -1487,28 +1460,10 @@
           "range": true,
           "refId": "A",
           "useBackend": false
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "disableTextWrap": false,
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_credential_verification_duration_seconds_bucket{cache_did=\"True\", did_provider=\"did:web\"}[30s])))",
-          "fullMetaSearch": false,
-          "hide": false,
-          "includeNullMetadata": true,
-          "instant": false,
-          "interval": "5",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "B",
-          "useBackend": false
         }
       ],
       "timeShift": "1650s",
-      "title": "DID:Web with cache end to end latency",
+      "title": "DID:Web with cache did resolution",
       "type": "timeseries"
     },
     {
@@ -1689,7 +1644,7 @@
               "mode": "off"
             }
           },
-          "displayName": "DID:Web with cache throughput",
+          "displayName": "DID:Web with cache latency",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1704,9 +1659,22 @@
               }
             ]
           },
-          "unit": "eps"
+          "unit": "s"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "DID:Web with cache verification latency"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -1715,14 +1683,16 @@
         "y": 49
       },
       "hideTimeOverride": false,
-      "id": 7,
+      "id": 13,
       "options": {
         "legend": {
           "calcs": [
             "max",
             "min",
             "p50",
-            "p95"
+            "p95",
+            "mean",
+            "stdDev"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -1742,10 +1712,9 @@
             "uid": "PBFA97CFB590B2093"
           },
           "disableTextWrap": false,
-          "editorMode": "code",
-          "expr": "sum(\n  rate(kafka_consumer_kafka_messages_consumed_total{\n  }[30s])\n)",
+          "editorMode": "builder",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket{did_provider=\"did:web\", cache_did=\"True\"}[30s])))",
           "fullMetaSearch": false,
-          "hide": true,
           "includeNullMetadata": true,
           "interval": "5",
           "legendFormat": "__auto",
@@ -1758,18 +1727,22 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
+          "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sum(rate(kafka_consumer_message_end_to_end_latency_seconds_count[30s]))",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_credential_verification_duration_seconds_bucket{cache_did=\"True\", did_provider=\"did:web\"}[30s])))",
+          "fullMetaSearch": false,
           "hide": false,
+          "includeNullMetadata": true,
           "instant": false,
           "interval": "5",
           "legendFormat": "__auto",
           "range": true,
-          "refId": "B"
+          "refId": "B",
+          "useBackend": false
         }
       ],
       "timeShift": "1650s",
-      "title": "DID:Web with cache throughput",
+      "title": "DID:Web with cache end to end latency",
       "type": "timeseries"
     },
     {
@@ -1900,7 +1873,7 @@
               "mode": "off"
             }
           },
-          "displayName": "DID:Ethr with cache throughput",
+          "displayName": "DID:Web with cache throughput",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1926,7 +1899,7 @@
         "y": 57
       },
       "hideTimeOverride": false,
-      "id": 9,
+      "id": 7,
       "options": {
         "legend": {
           "calcs": [
@@ -1954,18 +1927,33 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sum(\n  rate(kafka_consumer_kafka_messages_consumed_total{\n  }[$__rate_interval])\n)",
+          "expr": "sum(\n  rate(kafka_consumer_kafka_messages_consumed_total{\n  }[30s])\n)",
           "fullMetaSearch": false,
+          "hide": true,
           "includeNullMetadata": true,
           "interval": "5",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A",
           "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(kafka_consumer_message_end_to_end_latency_seconds_count[30s]))",
+          "hide": false,
+          "instant": false,
+          "interval": "5",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B"
         }
       ],
-      "timeShift": "3462s",
-      "title": "DID:Ethr with cache end to end throughput",
+      "timeShift": "1650s",
+      "title": "DID:Web with cache throughput",
       "type": "timeseries"
     },
     {
@@ -2122,18 +2110,8 @@
               "mode": "off"
             }
           },
-          "displayName": "DID:Web no cache verification latency",
-          "mappings": [
-            {
-              "options": {
-                "1": {
-                  "index": 0,
-                  "text": "sds"
-                }
-              },
-              "type": "value"
-            }
-          ],
+          "displayName": "DID:Ethr with cache throughput",
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -2147,55 +2125,18 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "eps"
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "{cache_did=\"False\", did_provider=\"did:web\", instance=\"kafka_consumer:9001\", job=\"kafka_consumer\", le=\"0.1\", processing_mode=\"async \", ssi_validation=\"true\"}"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "B"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "DID:Web no cache end to end latency"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 73
+        "x": 12,
+        "y": 65
       },
       "hideTimeOverride": false,
-      "id": 12,
+      "id": 9,
       "options": {
         "legend": {
           "calcs": [
@@ -2223,28 +2164,9 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket[30s])))",
+          "expr": "sum(\n  rate(kafka_consumer_kafka_messages_consumed_total{\n  }[$__rate_interval])\n)",
           "fullMetaSearch": false,
-          "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
-          "interval": "5",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "B",
-          "useBackend": false
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "disableTextWrap": false,
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_credential_verification_duration_seconds_bucket{cache_did=\"False\", did_provider=\"did:web\"}[30s])))",
-          "fullMetaSearch": false,
-          "hide": false,
-          "includeNullMetadata": false,
           "interval": "5",
           "legendFormat": "__auto",
           "range": true,
@@ -2252,8 +2174,8 @@
           "useBackend": false
         }
       ],
-      "timeShift": "2290s",
-      "title": "DID:Web no cache latency comparison",
+      "timeShift": "3462s",
+      "title": "DID:Ethr with cache end to end throughput",
       "type": "timeseries"
     },
     {
@@ -2322,7 +2244,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 81
+        "y": 73
       },
       "hideTimeOverride": false,
       "id": 8,
@@ -2425,8 +2347,18 @@
               "mode": "off"
             }
           },
-          "displayName": "DID:Ethr with cache latency",
-          "mappings": [],
+          "displayName": "DID:Web no cache verification latency",
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "index": 0,
+                  "text": "sds"
+                }
+              },
+              "type": "value"
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -2442,23 +2374,62 @@
           },
           "unit": "s"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "{cache_did=\"False\", did_provider=\"did:web\", instance=\"kafka_consumer:9001\", job=\"kafka_consumer\", le=\"0.1\", processing_mode=\"async \", ssi_validation=\"true\"}"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "DID:Web no cache end to end latency"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 89
+        "x": 12,
+        "y": 73
       },
       "hideTimeOverride": false,
-      "id": 5,
+      "id": 12,
       "options": {
         "legend": {
           "calcs": [
             "max",
             "min",
             "p50",
-            "p95"
+            "p95",
+            "mean",
+            "stdDev"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -2478,10 +2449,29 @@
             "uid": "PBFA97CFB590B2093"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket{did_provider=\"did:ethr:sepolia\", cache_did=\"True\"}[30s])))",
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket[30s])))",
           "fullMetaSearch": false,
+          "hide": false,
           "includeNullMetadata": true,
+          "instant": false,
+          "interval": "5",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_credential_verification_duration_seconds_bucket{cache_did=\"False\", did_provider=\"did:web\"}[30s])))",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": false,
           "interval": "5",
           "legendFormat": "__auto",
           "range": true,
@@ -2489,8 +2479,8 @@
           "useBackend": false
         }
       ],
-      "timeShift": "3462s",
-      "title": "DID:Ethr with cache end to end latency",
+      "timeShift": "2290s",
+      "title": "DID:Web no cache latency comparison",
       "type": "timeseries"
     },
     {
@@ -2559,7 +2549,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 97
+        "y": 81
       },
       "hideTimeOverride": false,
       "id": 17,
@@ -2590,8 +2580,9 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(credential_verifier_did_resolution_duration_seconds_bucket{did_provider=\"did:ethr:sepolia\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(credential_verifier_did_resolution_duration_seconds_bucket{did_provider=\"did:ethr:sepolia\", cached=\"false\"}[30s])))",
           "fullMetaSearch": false,
+          "hide": false,
           "includeNullMetadata": true,
           "interval": "5",
           "legendFormat": "__auto",
@@ -2664,29 +2655,16 @@
           },
           "unit": "s"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "B"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "DID:ethr with cache verification latency"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 105
+        "x": 12,
+        "y": 81
       },
       "hideTimeOverride": false,
-      "id": 15,
+      "id": 5,
       "options": {
         "legend": {
           "calcs": [
@@ -2721,24 +2699,6 @@
           "legendFormat": "__auto",
           "range": true,
           "refId": "A",
-          "useBackend": false
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_credential_verification_duration_seconds_bucket{did_provider=\"did:ethr:sepolia\", cache_did=\"True\"}[30s])))",
-          "fullMetaSearch": false,
-          "hide": false,
-          "includeNullMetadata": true,
-          "instant": false,
-          "interval": "5",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
@@ -2840,18 +2800,6 @@
                 }
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "B"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "DID:Web no cache end to end latency"
-              }
-            ]
           }
         ]
       },
@@ -2859,7 +2807,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 113
+        "y": 89
       },
       "hideTimeOverride": false,
       "id": 16,
@@ -2869,7 +2817,137 @@
             "max",
             "min",
             "p50",
-            "p95"
+            "p95",
+            "mean",
+            "stdDev"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(credential_verifier_did_resolution_duration_seconds_bucket{cache_did=\"false\", did_provider=\"did:web\"}[30s])))",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": false,
+          "instant": false,
+          "interval": "5",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B",
+          "useBackend": false
+        }
+      ],
+      "timeShift": "2290s",
+      "title": "DID Web resolution latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": true,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "TIme",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "DID:Ethr with cache latency",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "DID:ethr with cache verification latency"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 89
+      },
+      "hideTimeOverride": false,
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max",
+            "min",
+            "p50",
+            "p95",
+            "mean",
+            "stdDev"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -2890,10 +2968,26 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(credential_verifier_did_resolution_duration_seconds_bucket{cache_did=\"false\", did_provider=\"did:web\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket{did_provider=\"did:ethr:sepolia\", cache_did=\"True\"}[30s])))",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "interval": "5",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_credential_verification_duration_seconds_bucket{did_provider=\"did:ethr:sepolia\", cache_did=\"True\"}[30s])))",
           "fullMetaSearch": false,
           "hide": false,
-          "includeNullMetadata": false,
+          "includeNullMetadata": true,
           "instant": false,
           "interval": "5",
           "legendFormat": "__auto",
@@ -2902,8 +2996,8 @@
           "useBackend": false
         }
       ],
-      "timeShift": "2290s",
-      "title": "DID Web resolution latency",
+      "timeShift": "3462s",
+      "title": "DID:Ethr with cache end to end latency",
       "type": "timeseries"
     }
   ],
@@ -2921,5 +3015,5 @@
   "timezone": "browser",
   "title": "Thesis Dashboard",
   "uid": "a0424acf-0aa6-4258-b77f-1b05db56cc44",
-  "version": 4
+  "version": 6
 }
