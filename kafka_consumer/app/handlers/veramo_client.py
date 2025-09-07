@@ -15,11 +15,6 @@ logger = logging.getLogger("veramo_client")
 
 
 class VeramoClient:
-    # def __init__(self, cfg: dict[str, str]):
-    #     self.base_url = cfg["veramo_url"]
-    #     self.token = cfg["veramo_token"]
-    #     self.metrics = Metrics()
-
     def __init__(self, cfg: dict[str, str]):
         self.base_url = cfg["veramo_url"]
         self.token = cfg["veramo_token"]
@@ -51,53 +46,6 @@ class VeramoClient:
     async def close(self):
         """Close the aiohttp session"""
         await self.session.close()
-
-    # async def do_request(
-    #     self, method: str, endpoint: str, body: Optional[Dict[str, Any]] = None
-    # ) -> bytes:
-    #     start = time.time()
-    #     url = f"{self.base_url}{endpoint}"
-
-    #     headers = {
-    #         "Authorization": f"Bearer {self.token}",
-    #         "Content-Type": "application/json",
-    #         "Accept": "application/json; charset=utf-8",
-    #     }
-
-    #     async with aiohttp.ClientSession() as session:
-    #         try:
-    #             async with session.request(
-    #                 method=method,
-    #                 url=url,
-    #                 headers=headers,
-    #                 data=json.dumps(body) if body else None,
-    #             ) as response:
-    #                 response_bytes = await response.read()
-
-    #                 duration = time.time() - start
-    #                 self.metrics.labels(self.metrics.veramo_requests_total,
-    #                                     endpoint=endpoint, status_code=response.status).inc()
-    #                 self.metrics.labels(
-    #                     self.metrics.veramo_request_duration, endpoint=endpoint).observe(duration)
-
-    #                 if response.status >= 400:
-    #                     error_msg = response_bytes.decode('utf-8')
-    #                     logger.error(
-    #                         f"Veramo API error ({response.status}): {error_msg}")
-    #                     raise Exception(
-    #                         f"API error ({response.status}): {error_msg}")
-
-    #                 return response_bytes
-
-    #         except aiohttp.ClientError as e:
-    #             duration = time.time() - start
-    #             self.metrics.labels(
-    #                 self.metrics.veramo_request_duration, endpoint=endpoint).observe(duration)
-    #             self.metrics.labels(self.metrics.veramo_requests_total,
-    #                                 endpoint=endpoint,
-    #                                 status_code="client_error"
-    #                                 ).inc()
-    #             raise e
 
     async def do_request(self, method: str, endpoint: str, body: Optional[Dict[str, Any]] = None) -> bytes:
         start = time.time()
