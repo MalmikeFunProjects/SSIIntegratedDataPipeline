@@ -100,7 +100,7 @@ services:
       CONFLUENT_METRICS_ENABLE: "true" # Enable metrics collection
       PORT: 9021 # Port for Control Center
 
-  Kafka REST Proxy: Exposes a RESTful interface to interact with Kafka
+  # Kafka REST Proxy: Exposes a RESTful interface to interact with Kafka
   kafka-rest:
     image: confluentinc/cp-kafka-rest:7.4.0 # Use specific version instead of latest
     hostname: kafka-rest # Hostname for Kafka REST Proxy
