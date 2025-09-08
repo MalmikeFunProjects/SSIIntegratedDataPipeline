@@ -14,6 +14,8 @@ RUN yarn install
 
 COPY . .
 
+COPY sample.env .env
+
 # Expose the port your Node.js app listens on
 EXPOSE 3332
 
