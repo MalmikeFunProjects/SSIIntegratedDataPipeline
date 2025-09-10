@@ -33,7 +33,7 @@ RUN poetry --no-interaction --no-ansi --no-root install
 COPY . .
 
 # Expose port used by your application (if needed)
-EXPOSE 3337 9001
+EXPOSE 3338 9001
 
 # CMD ["poetry", "run", "python", "producer.py"]
 ENTRYPOINT ["/app/scripts/entryPoint.sh"]

@@ -125,7 +125,3 @@ export interface OpenAPISchemaModifier {
   modify(schema: OpenAPIV3.Document): OpenAPIV3.Document;
   validate?(schema: OpenAPIV3.Document): boolean; // Optional validation
 }
-
-
-
-

@@ -32,4 +32,4 @@ def getBoolean(key:str, default: bool):
 
 SSI_VALIDATION = getBoolean("SSI_VALIDATION", True)
 CACHE_DID = getBoolean("CACHE_DID", False)
-PROCESSING_MODE = "async " if os.getenv("PROCESSING_MODE", "sync").lower() == "async" and SSI_VALIDATION else "sync"
+PROCESSING_MODE = "async" if os.getenv("PROCESSING_MODE", "sync").lower() == "async" and SSI_VALIDATION else "sync"
