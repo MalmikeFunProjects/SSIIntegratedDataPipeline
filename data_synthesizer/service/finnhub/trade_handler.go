@@ -32,20 +32,14 @@ type TradeProcessor struct {
 }
 
 // NewTradeProcessor creates a new trade processor
-func NewTradeProcessor(identity *veramo.IdentityInformation, config *config.Config) (*TradeProcessor, error) {
+func NewTradeProcessor(identity *veramo.IdentityInformation, config *config.Config) *TradeProcessor {
 	ctx, cancel := context.WithCancel(context.Background())
-
-	if config.SSIValidation && identity == nil {
-		cancel()
-		return nil, fmt.Errorf("ssi validation is enabled but identity information is nil")
-	}
-
 	return &TradeProcessor{
 		identityInformation: identity,
 		ctx:                 ctx,
 		cancel:              cancel,
 		ssiValidation:       config.SSIValidation,
-	}, nil
+	}
 }
 
 func structToMap(data interface{}) (map[string]interface{}, error) {
@@ -140,12 +134,6 @@ func (tp *TradeProcessor) HandleTrade(trade models.FinnhubTrade, startTimestamp 
 		}
 		payload["tradeData"] = tradeMap
 	} else {
-		if tp.identityInformation == nil {
-			metrics.TradeProcessingDuration.WithLabelValues(trade.Symbol, "no_identity").Observe(0)
-			metrics.TradesProcessedTotal.WithLabelValues(trade.Symbol, "failed").Inc()
-			return fmt.Errorf("identity information is nil for symbol %s", trade.Symbol)
-		}
-		
 		tradeCredential, err := tp.SignPayload(trade)
 		if err != nil {
 			metrics.TradeProcessingDuration.WithLabelValues(trade.Symbol, "sign_error").Observe(0)
