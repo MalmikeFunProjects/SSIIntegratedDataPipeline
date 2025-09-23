@@ -1140,7 +1140,7 @@
         "x": 0,
         "y": 25
       },
-      "id": 22,
+      "id": 30,
       "options": {
         "legend": {
           "calcs": [
@@ -1178,9 +1178,23 @@
           "range": true,
           "refId": "A",
           "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "rate(container_cpu_usage_seconds_total{id=\"/\"}[30s] offset 2h30s) / scalar(machine_cpu_cores{instance=\"cadvisor:8080\"} offset 2h30s) * 100",
+          "hide": false,
+          "instant": false,
+          "interval": "5",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B"
         }
       ],
-      "title": "No validation  CPU usage",
+      "title": "CPU usage (no validation vs did:key)",
       "type": "timeseries"
     },
     {
@@ -1347,7 +1361,7 @@
             "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Percentages",
+            "axisLabel": "TIme",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
@@ -1376,7 +1390,7 @@
               "mode": "off"
             }
           },
-          "displayName": "CPU usage",
+          "displayName": "DID:Web no cache latency",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1391,33 +1405,9 @@
               }
             ]
           },
-          "unit": "percent"
+          "unit": "s"
         },
         "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "{cpu=\"total\", id=\"/\", instance=\"cadvisor:8080\", job=\"cadvisor\"}"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              }
-            ]
-          },
           {
             "matcher": {
               "id": "byFrameRefID",
@@ -1426,7 +1416,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "CPU usage (no validation)"
+                "value": "DID:Web no cache latency (sync)"
               }
             ]
           },
@@ -1438,7 +1428,19 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "CPU usage (did:key)"
+                "value": "DID:Web no cache latency (async)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Did:web no cache (sync) verification latency"
               }
             ]
           }
@@ -1450,14 +1452,16 @@
         "x": 0,
         "y": 33
       },
-      "id": 30,
+      "id": 26,
       "options": {
         "legend": {
           "calcs": [
             "max",
             "min",
             "p50",
-            "p95"
+            "p95",
+            "mean",
+            "stdDev"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -1478,11 +1482,10 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "rate(container_cpu_usage_seconds_total{id=\"/\"}[30s] offset 2h35m) / scalar(machine_cpu_cores{instance=\"cadvisor:8080\"} offset 2h35m) * 100",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket{did_provider=\"did:web\", cache_did=\"False\", processing_mode=\"sync\"}[30s])))",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
           "interval": "5",
           "legendFormat": "__auto",
           "range": true,
@@ -1495,16 +1498,30 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "rate(container_cpu_usage_seconds_total{id=\"/\"}[30s] offset 2h30s) / scalar(machine_cpu_cores{instance=\"cadvisor:8080\"} offset 2h30s) * 100",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket{did_provider=\"did:web\", cache_did=\"False\", processing_mode=\"async\"}[30s] offset 32m50s)))",
           "hide": false,
           "instant": false,
           "interval": "5",
           "legendFormat": "__auto",
           "range": true,
           "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_credential_verification_duration_seconds_bucket{did_provider=\"did:web\", cache_did=\"False\", processing_mode=\"sync\"}[30s])))",
+          "hide": false,
+          "instant": false,
+          "interval": "5",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "C"
         }
       ],
-      "title": "CPU usage (no validation vs did:key)",
+      "title": "DID:Web no cache end to end latency (sync vs async)",
       "type": "timeseries"
     },
     {
@@ -1700,183 +1717,6 @@
               "mode": "off"
             }
           },
-          "displayName": "DID:Web no cache latency",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "A"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "DID:Web no cache latency (sync)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "B"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "DID:Web no cache latency (async)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "C"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Did:web no cache (sync) verification latency"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 41
-      },
-      "id": 26,
-      "options": {
-        "legend": {
-          "calcs": [
-            "max",
-            "min",
-            "p50",
-            "p95",
-            "mean",
-            "stdDev"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "disableTextWrap": false,
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket{did_provider=\"did:web\", cache_did=\"False\", processing_mode=\"sync\"}[30s])))",
-          "fullMetaSearch": false,
-          "hide": false,
-          "includeNullMetadata": true,
-          "interval": "5",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket{did_provider=\"did:web\", cache_did=\"False\", processing_mode=\"async\"}[30s] offset 32m50s)))",
-          "hide": false,
-          "instant": false,
-          "interval": "5",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_credential_verification_duration_seconds_bucket{did_provider=\"did:web\", cache_did=\"False\", processing_mode=\"sync\"}[30s])))",
-          "hide": false,
-          "instant": false,
-          "interval": "5",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "C"
-        }
-      ],
-      "title": "DID:Web no cache end to end latency (sync vs async)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": true,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "TIme",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
           "displayName": "DID:Web with cache latency",
           "mappings": [],
           "thresholds": {
@@ -1925,7 +1765,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 49
+        "y": 41
       },
       "id": 13,
       "options": {
@@ -1987,118 +1827,6 @@
       ],
       "title": "DID:Web with cache latency",
       "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": true,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Time",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "displayName": "DID:Key latency",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 57
-      },
-      "id": 2,
-      "options": {
-        "legend": {
-          "calcs": [
-            "max",
-            "min",
-            "p50",
-            "p95",
-            "mean",
-            "stdDev"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "disableTextWrap": false,
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket{did_provider=\"did:key\", ssi_validation=\"true\", cache_did=\"False\"}[30s] offset 2h30s)))",
-          "fullMetaSearch": false,
-          "hide": false,
-          "includeNullMetadata": true,
-          "interval": "5",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "DID:Key end to end latency",
-      "type": "timeseries"
     }
   ],
   "preload": false,
@@ -2116,5 +1844,5 @@
   "timezone": "browser",
   "title": "Thesis Dashboard",
   "uid": "a0424acf-0aa6-4258-b77f-1b05db56cc44",
-  "version": 8
+  "version": 9
 }
