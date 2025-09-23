@@ -42,15 +42,25 @@ func main() {
 		os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 
-	veramoClient := veramo.NewClient(&cfg)
+	var identity *veramo.IdentityInformation
+	if cfg.SSIValidation {
+		veramoClient := veramo.NewClient(&cfg)
 
-	identity, err := veramo.BootstrapDevice(veramoClient, cfg.KMS, cfg.DidProvider, cfg.Tickers, cfg.DidWebHost, cfg.DidWebProject)
-	if err != nil {
-		log.Fatalf("❌ Error initializing identity: %v", err)
+		var err error
+		identity, err = veramo.BootstrapDevice(veramoClient, cfg.KMS, cfg.DidProvider, cfg.Tickers, cfg.DidWebHost, cfg.DidWebProject)
+		if err != nil {
+			log.Fatalf("❌ Error initializing identity: %v", err)
+		}
 	}
 
 
-	handler := finnhub.NewTradeProcessor(identity, &cfg)
+	handler, err := finnhub.NewTradeProcessor(identity, &cfg)
+	if err != nil {
+		log.Fatalf("Failed to create trade processor: %v", err)
+	}
+
+	log.Printf("✔ Trade processor created.")
+
 	metrics.ActiveTradeProcessors.Inc()
 
 	// Create and configure client
@@ -58,7 +68,9 @@ func main() {
 
     log.Printf("Health server running on http://localhost:%s/health", cfg.Port)
     log.Printf("WebSocket server started on ws://localhost:%s/ws", cfg.Port)
-    log.Printf("🔐 Number of credentials: %d...", len(identity.Credentials))
+	if identity != nil {
+    	log.Printf("🔐 Number of credentials: %d...", len(identity.Credentials))
+	}
 	http.HandleFunc("/health", healthHandler)
     http.HandleFunc("/ws", websocket.HandleWebSocket)
 
