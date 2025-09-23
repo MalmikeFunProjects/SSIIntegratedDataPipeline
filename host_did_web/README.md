@@ -4,6 +4,14 @@ A Go service that **fetches and publishes `did:web` documents** into a GitHub Pa
 
 ---
 
+## Associated Projects
+
+- [Source project used when uploading files to Host Project](https://github.com/MalmikeFunProjects/SSIIntegratedDataPipeline/blob/main/host_did_web)
+
+- [Host Project to host did:web documents on github pages](https://github.com/MalmikeFunProjects/HostWebDid.git): configure which GitHub repository to use by updating the `GH_REPO` value in the `sample.env` file.
+
+---
+
 ## Features
 
 * **HTTP API** to request hosting for `did:web` DIDs
