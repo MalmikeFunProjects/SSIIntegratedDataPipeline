@@ -32,7 +32,7 @@ class Metrics:
 
         self._common_labels = {
             "did_provider": did_provider,
-            "ssi_validation": "true" if ssi_validation else "false",
+            "ssi_validation": str(ssi_validation).lower(),
             "cache_did": cache_did,
             "processing_mode": processing_mode,
         }
