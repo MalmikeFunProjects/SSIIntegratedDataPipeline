@@ -99,7 +99,7 @@ DID_PROVIDER=did:web
 SSI_VALIDATION=true
 CACHE_DID=false
 PROCESSING_MODE=async
-PRODUCER_TIMEOUT=360.0
+PRODUCER_TIMEOUT=300.0
 ```
 
 **Option 2: did:web, sync, cached DID**
@@ -108,7 +108,7 @@ DID_PROVIDER=did:web
 SSI_VALIDATION=true
 CACHE_DID=true
 PROCESSING_MODE=sync
-PRODUCER_TIMEOUT=360.0
+PRODUCER_TIMEOUT=300.0
 ```
 
 **Option 3: did:key, sync, no DID cache**
@@ -117,7 +117,7 @@ DID_PROVIDER=did:key
 SSI_VALIDATION=true
 CACHE_DID=false
 PROCESSING_MODE=sync
-PRODUCER_TIMEOUT=360.0
+PRODUCER_TIMEOUT=300.0
 ```
 
 **Option 4: did:key, sync, cached DID**
@@ -126,14 +126,13 @@ DID_PROVIDER=did:key
 SSI_VALIDATION=true
 CACHE_DID=true
 PROCESSING_MODE=sync
-PRODUCER_TIMEOUT=360.0
+PRODUCER_TIMEOUT=300.0
 ```
 
 **Option 5: validation disabled**
 ```
 SSI_VALIDATION=false
-PRODUCER_TIMEOUT=360.0
-DID_PROVIDER=None
+PRODUCER_TIMEOUT=300.0
 ```
 
 **Option 6: did:ethr:sepolia, sync, cached DID**
@@ -142,7 +141,7 @@ DID_PROVIDER=did:ethr:sepolia
 SSI_VALIDATION=true
 CACHE_DID=true
 PROCESSING_MODE=sync
-PRODUCER_TIMEOUT=360.0
+PRODUCER_TIMEOUT=300.0
 ```
 ## Verifying the Pipeline
 

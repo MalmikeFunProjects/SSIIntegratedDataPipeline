@@ -1,49 +1,35 @@
 # Grafana for Veramo Agent Metrics
 
-This repository provides a ready-to-use Grafana setup for visualizing **Veramo Agent** and **Kafka Consumer** metrics, along with a Python utility to export dashboard panels as PNG images for reporting or thesis work.
+This guide shows how to set up Grafana with Prometheus to visualize Veramo Agent and Kafka Consumer metrics using a pre-configured dashboard.
 
----
+## Prerequisites
 
-## 📂 Project Structure
+- Docker & Docker Compose
+- A running Prometheus container accessible at `http://prometheus:9090` on the same Docker network (e.g., `veramo_network`)
+- Veramo Agent exposing `/metrics` endpoint that Prometheus scrapes
+
+## Setup
+
+### 1. Create Directory Structure
+
+Set up the following folder structure in your project:
 
 ```
-.
-├── export_graphs_as_png/        # Python project for PNG export
-│   ├── export_graphs_as_png/
-│   │   └── download_panels.py   # Export logic
-│   ├── poetry.lock
-│   ├── pyproject.toml           # Poetry project definition
-│   └── sample.env               # Example environment variables
-├── provisioning/                # Grafana provisioning config
-│   ├── dashboards/
-│   │   └── thesis_dashboard.json # Pre-configured dashboard
-│   └── datasources/
-│       └── datasource.yml       # Prometheus data source
-└── README.md
+grafana/
+  provisioning/
+    datasources/
+      prometheus.yml
+  dashboard_configurations/
+    grafana_dashboard.json  # your dashboard JSON
 ```
 
----
+### 2. Configure Prometheus Data Source
 
-## 🚀 Prerequisites
-
-* Docker & Docker Compose
-* Prometheus container running on the same Docker network (`veramo_network`), scraping:
-
-  * Veramo Agent `/metrics`
-  * Kafka Consumer `/metrics`
-* Python 3.12+ (for the PNG export tool)
-* [Poetry](https://python-poetry.org/) for dependency management
-
----
-
-## ⚙️ Grafana Setup
-
-### 1. Configure Prometheus Data Source
-
-`provisioning/datasources/datasource.yml`:
+Create `grafana/provisioning/datasources/datasource.yml`:
 
 ```yaml
 apiVersion: 1
+
 datasources:
   - name: Prometheus
     type: prometheus
@@ -52,77 +38,99 @@ datasources:
     isDefault: true
 ```
 
-### 2. Provision Dashboard
+### 3. Configure Dashboard Auto-Loading (Optional)
 
-`provisioning/dashboards/thesis_dashboard.json` contains a ready-made dashboard.
-It is automatically loaded at startup.
+To automatically load dashboards on startup, create `grafana/provisioning/dashboards/dashboards.yml`:
 
-### 3. Docker Compose Service
+```yaml
+apiVersion: 1
+
+providers:
+  - name: 'Thesis Dashboards'
+    orgId: 1
+    folder: 'Thesis'
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+```
+
+Place your dashboard JSON file as `grafana/provisioning/dashboards/thesis-dashboard.json`.
+
+### 4. Add Grafana to Docker Compose
+
+Add this service to your `docker-compose.yml`:
 
 ```yaml
 services:
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana
     container_name: grafana
+    hostname: grafana
     ports:
       - "3000:3000"
     volumes:
-      - ./provisioning:/etc/grafana/provisioning
+      - ./grafana/provisioning:/etc/grafana/provisioning
       - grafana-data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_SECURITY_ALLOW_EMBEDDING=true
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
-      # external image renderer
-      - GF_RENDERING_SERVER_URL=http://grafana_renderer:8081/render
-      - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
-      - GF_SERVER_ROOT_URL=http://grafana:3000/
-    depends_on:
-      - grafana_renderer
-    networks: [veramo_network]
-
-  grafana_renderer:
-    image: grafana/grafana-image-renderer:latest
-    container_name: grafana_renderer
-    ports:
-      - "3001:8081"   # host:container mapping (Grafana talks to 8081 internally)
-    environment:
-      - ENABLE_METRICS=true
-    shm_size: "256m"   # recommended for Chromium stability
-    security_opt:
-      - seccomp:unconfined
-    networks: [veramo_network]
+    networks:
+      - veramo_network
 
 volumes:
   grafana-data:
 ```
 
-### 4. Start Grafana
+### 5. Start Grafana
 
 ```bash
-docker compose up -d grafana grafana_renderer
+docker compose up -d grafana
 ```
 
-Visit [http://localhost:3000](http://localhost:3000)
-Default credentials: `admin` / `admin` (change immediately).
+### 6. Access Grafana
 
----
+Open [http://localhost:3000](http://localhost:3000)
 
-## 📊 Metrics in the Dashboard
+- Username: `admin`
+- Password: `admin`
 
-The dashboard visualizes:
+**Security Note:** Change the admin password and disable anonymous auth in production.
 
-* End-to-end latency (p95)
-* DID provider latencies (did\:key, did\:web, did\:ethr)
-* Credential verification latency
-* Throughput (events/sec)
-* DID resolution latency
-* Payload size distribution
-* CPU usage (via cAdvisor)
+## Dashboard Import (Alternative to Auto-Loading)
 
-Example queries:
+If you didn't configure automatic dashboard loading:
 
+### Via Web UI
+1. Navigate to **Dashboards → Import**
+2. Paste your dashboard JSON
+3. Select **Prometheus** as the data source
+4. Click **Import**
+
+### Via API
+```bash
+curl -u admin:admin \
+  -H "Content-Type: application/json" \
+  -X POST http://localhost:3000/api/dashboards/db \
+  -d @grafana/provisioning/dashboards/thesis-dashboard.json
+```
+
+## Dashboard Metrics
+
+The sample dashboard includes panels for:
+
+- **End-to-end latency (p95)**
+- **DID provider-specific latencies** (did:key, did:web, did:ethr)
+- **Credential verification latency**
+- **Throughput** (events/sec)
+- **DID resolution latency**
+- **Payload size heatmaps**
+- **CPU usage** (requires cAdvisor)
+
+Example queries used:
 ```promql
 # End-to-end latency p95
 histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_latency_seconds_bucket[30s])))
@@ -131,70 +139,29 @@ histogram_quantile(0.95, sum by(le) (rate(kafka_consumer_message_end_to_end_late
 sum(rate(kafka_consumer_message_end_to_end_latency_seconds_count[30s]))
 ```
 
----
+## Production Considerations
 
-## 🖼 Exporting Dashboard Panels as PNGs
+- **Security**: Set a strong admin password and disable anonymous access:
+  ```yaml
+  - GF_AUTH_ANONYMOUS_ENABLED=false
+  ```
+- **TLS**: Deploy behind a reverse proxy with TLS termination
+- **Persistence**: Dashboard files in `grafana/provisioning/dashboards/` serve as source of truth
+- **Access Control**: Restrict API endpoints if exposing publicly
 
-> ⚠️ The API token must be a [Grafana service account token](https://grafana.com/docs/grafana/latest/administration/service-accounts/). Treat it like a password.
+## Troubleshooting
 
+**No data in panels:**
+- Verify Prometheus targets are UP and scraping
+- Check data source configuration points to `http://prometheus:9090`
+- Adjust dashboard time range
 
-### OPTION 1: One-off PNG export (single panel)
+**Dashboard not loading:**
+- Check container logs: `docker logs grafana`
+- Validate YAML syntax and file paths
+- Ensure proper Docker network connectivity
 
-Use the d-solo render endpoint with your dashboard UID and numeric panel ID:
-
-```sh
-curl -H "Authorization: Bearer <GRAFANA_TOKEN>" \
-  -o panel-1.png \
-  "http://localhost:3000/render/d-solo/<DASH_UID>/<SLUG>?orgId=1&panelId=1&from=2025-09-19T15:27:55.000Z&to=2025-09-19T15:33:45.000Z&width=1600&height=900&tz=Europe%2FWarsaw&theme=dark"
-```
-
-The `export_graphs_as_png` subproject contains a Poetry-based CLI to export each Grafana panel as a PNG.
-
-### OPTION 2: Export all panels via script
-#### 1. Configure environment
-
-Copy and edit the sample environment file:
-
-```bash
-cp export_graphs_as_png/sample.env .env
-```
-
-Fill in values such as:
-
-```env
-GRAFANA_URL=http://localhost:3000
-GRAFANA_TOKEN=glsa_<your_token_here>
-GRAFANA_DASH_UID=a0424acf-0aa6-4258-b77f-1b05db56cc44
-GRAFANA_FROM=2025-09-19T15:27:55.000Z
-GRAFANA_TO=2025-09-19T15:33:45.000Z
-GRAFANA_WIDTH=1600
-GRAFANA_HEIGHT=900
-GRAFANA_TZ=Europe/Warsaw
-GRAFANA_THEME=dark
-GRAFANA_OUTDIR=grafana_panels
-```
-
-#### 2. Install dependencies
-
-```bash
-cd export_graphs_as_png
-poetry install
-```
-
-#### 3. Run exporter
-
-```bash
-poetry run export-grafana-panels
-```
-
-PNGs will be saved in the directory defined by `GRAFANA_OUTDIR` (default: `grafana_panels/`).
-
----
-
-## 🔐 Production Notes
-
-* Change the admin password and disable anonymous auth (`GF_AUTH_ANONYMOUS_ENABLED=false`)
-* Run Grafana behind TLS (reverse proxy, ingress, etc.)
-* Don’t commit `.env` files or API tokens to version control
-* Pin versions of Grafana and image renderer for reproducibility
+**Metric name mismatches:**
+- Edit panel queries to match your actual metric names
+- Verify your services emit expected labels (`did_provider`, `ssi_validation`, etc.)
 
